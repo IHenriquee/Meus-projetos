@@ -1,12 +1,24 @@
-const Discord = require("discord.js")
+  const Discord = require("discord.js")
 const mu = require("@nooxbr/math-utilities")
+const Gacha = require('../../Schemas/GachaSchema') //qualquer schema vai puxar asssim na pasta comandos ss é so mudar o "Gacha"
+const Users = require('../../Schemas/UserSchema')
+const Clients = require('../../Schemas/ClientSchema') // linde, tem como fechar esses var? pq eu to surtando aq? // onde tem os personagem // vc ssabe fechar?
+const Dex = require('../../Schemas/PersonagemSchema')  //ja ta fechado
 
 module.exports = {
-    name: "roll", // Coloque o nome do seu comando
-    aliases: [""], // Coloque sinônimos do nome do comando
+    name: "roll",
+    aliases: ["Roll"], 
 
     run: async(client, message, args) => {
 
+      let GachaDB = await Gacha.findOne({ userID: message.author.id }) || new Gacha({ userID: message.author.id })
+
+  let UserDB = await Users.findOne({ userID: message.author.id }) || new Users({ userID: message.author.id })
+
+
+  let ClientDB = await Clients.findOne({ clientID: "1038836714988376114" }) || new Clients({ clientID: "1038836714988376114" })
+
+      
       var PersonagensLimiteds = [
         {"n":"ZeroTwo", "r": "Limitado", "u": "https://cdn.discordapp.com/attachments/1052264552454172682/1056000978983338106/1671840518520.png", "v": "800000", "h": "#fc7303"},
         {"n": "Dio", "r": "Limitado", "u": "https://cdn.discordapp.com/attachments/1052264552454172682/1056001372631355493/1671749263505.png", "v": "800000", "h": "#fc7303"}
@@ -89,7 +101,13 @@ module.exports = {
         {"n":"Jonathan", "r": "Comum", "u": "https://cdn.discordapp.com/attachments/1047296657714335845/1055614755290747021/1671748415006.png", "v": "2000", "h": "#21ff08"},
       ]
       
-      
+      var PersonagensNatalino = [
+        {"n":"", "r": "", "u": "", "v": "", "h": "#"},
+      ]
+
+      var PersonagensEspeciais = [
+        {"n":"Premium", "r": "Unico", "u": "https://cdn.discordapp.com/attachments/1052264552454172682/1056000978983338106/1671840518520.png", "v": "0", "h": "#ff0863"},
+      ]
 
       
       let variavelL = PersonagensLimiteds[Math.floor(Math.random() * PersonagensLimiteds.length)]
@@ -100,13 +118,45 @@ module.exports = {
       let variavelLE = PersonagensLendarios[Math.floor(Math.random() * PersonagensLendarios.length)]
       let variavelM = PersonagensMiticos[Math.floor(Math.random() * PersonagensMiticos.length)]
       let variavelD = PersonagensDivinos[Math.floor(Math.random() * PersonagensDivinos.length)]
+      let variavelP = PersonagensEspeciais[Math.floor(Math.random() * PersonagensEspeciais.length)]
     
       const Chance = Math.random()
 
-      if (Chance < 0.005) {
+      if (GachaDB.rubycoins < 200) {
+        await message.reply({ content: `Você não tem a quantia necessária para girar.`})
+      } else {
+
+      if (Chance < 0.00001) {
+        let embedpegou = new Discord.EmbedBuilder()
+        .setTitle(`<a:roll:1049040693022163085> | Premium Roll!`)
+        .setDescription(`<a:ruby_anotando:1051958885256269908> Parabéns! Você pegou **${variavelP.n}**!\n\n<a:ruby_brilhos:1051958882752274452> Raridade: **${variavelP.r}**`)
+        .setFooter({ text: `Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!`})
+        .setImage(variavelP.u)
+        .setColor(variavelP.h)
+
+        let butao = new Discord.ActionRowBuilder().addComponents(
+            new Discord.ButtonBuilder()
+            .setCustomId("getpremium")
+            .setEmoji(`<a:ruby:1055114412161249351>`)
+            .setStyle(Discord.ButtonStyle.Success)
+            .setLabel(`Resgatar seu ${variavelP.n}`)
+        )
+        message.reply({ embeds: [embedpegou], components: [butao]}).then((messageid) => {
+            let filtro_p = (msg) => msg.customId === `getpremium` && msg.user.id === message.author.id && msg.message.id === messageid.id
+            let coletor_p = message.channel.createMessageComponentCollector({ filter: filtro_p, max: 1 })
+
+            coletor_p.on('collect', (c) => {
+                UserDB.premium = true
+                c.reply({ content: `:Rubyparty: | O usuario ${c.user} resgatou o ${variavelP.n} no roll, que sorte! (Adicionado ao seu Perfil)`})
+            })
+        })
+      }
+
+      else if (Chance < 0.001) {
         let embedpegou = new Discord.EmbedBuilder()
         .setTitle(`<a:roll:1049040693022163085> | Roll!`)
-        .setDescription(`<a:ruby_anotando:1056327775709048945> Parabéns! Você pegou **${variavelL.n}**!\n\n<a:ruby_brilhos:1051958882752274452> Raridade: **${variavelL.r}**\n\n<a:Christmas:1056327422657699840> Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!\n\nSUA CHANCE: ${Chance}`)
+        .setDescription(`<a:ruby_anotando:1051958885256269908> Parabéns! Você pegou **${variavelL.n}**!\n\n<a:ruby_brilhos:1051958882752274452> Raridade: **${variavelL.r}**`)
+        .setFooter({ text: `Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!`})
         .setImage(variavelL.u)
         .setColor(variavelL.h)
 
@@ -121,16 +171,32 @@ module.exports = {
             let filtro_p = (msg) => msg.customId === `comprarlimitado` && msg.user.id === message.author.id && msg.message.id === messageid.id
             let coletor_p = message.channel.createMessageComponentCollector({ filter: filtro_p, max: 1 })
 
-            coletor_p.on('collect', (c) => {
+            coletor_p.on('collect', (c) => {  
+              if (GachaDB.rubycoins < variavelL.v) {
+                c.reply({ content: `Você não possui dinheiro suficiente para fazer a compra do personagem **${variavelL.n}**, faltam ${variavelL.v - GachaDB.rubycoins} RubyCoins.`})
+              } else {
                 c.reply({ content: `:Rubyparty: | O usuario ${c.user} comprou o personagem ${variavelL.n} por ${variavelL.v} RubyCoins! (Adicionado na RubyDex)`})
-            })
+                GachaDB.rubycoins -= variavelL.v
+                GachaDB.save()
+                UserDB.save()
+                new Dex({
+                userID: message.author.id,
+                nomeDoPersonagem: variavelL.n,
+                url: variavelL.u,//thanks
+                raridade: variavelL.r,
+                timestamp: Date.now()
+                }).save()
+                
+              }
+              })
         })
       }
 
       else if (Chance < 0.01) {
         let embedpegou = new Discord.EmbedBuilder()
         .setTitle(`<a:roll:1049040693022163085> | Roll!`)
-        .setDescription(`<a:ruby_anotando:1056327775709048945> Parabéns! Você pegou **${variavelS.n}**!\n\n<a:ruby_brilhos:1051958882752274452> Raridade: **${variavelS.r}**\n\n<a:Christmas:1056327422657699840> Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!\n\nSUA CHANCE: ${Chance}`)
+        .setDescription(`<a:ruby_anotando:1051958885256269908> Parabéns! Você pegou **${variavelS.n}**!\n\n<a:ruby_brilhos:1051958882752274452> Raridade: **${variavelS.r}**`)
+        .setFooter({ text: `Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!`})
         .setImage(variavelS.u)
         .setColor(variavelS.h)
 
@@ -146,14 +212,30 @@ module.exports = {
             let coletor_p = message.channel.createMessageComponentCollector({ filter: filtro_p, max: 1 })
 
             coletor_p.on('collect', (c) => {
+              
+              if (GachaDB.rubycoins < variavelS.v) {
+                c.reply({ content: `Você não possui dinheiro suficiente para fazer a compra do personagem **${variavelS.n}**, faltam ${variavelS.v - GachaDB.rubycoins} RubyCoins.`})
+              } else {
+              GachaDB.rubycoins -= variavelS.v
+                GachaDB.save()
+                UserDB.save()
+                new Dex({
+                userID: message.author.id,
+                nomeDoPersonagem: variavelS.n,
+                url: variavelS.u,//thanks
+                raridade: variavelS.r,
+                timestamp: Date.now()
+                }).save()
                 c.reply({ content: `:Rubyparty: | O usuario ${c.user} comprou o personagem ${variavelS.n} por ${variavelS.v} RubyCoins! (Adicionado na RubyDex)`})
-            })
+              }
+              })
         })
       }
       else if (Chance < 0.05) {
         let embedpegou = new Discord.EmbedBuilder()
         .setTitle(`<a:roll:1049040693022163085> | Roll!`)
-        .setDescription(`<a:ruby_anotando:1056327775709048945> Parabéns! Você pegou **${variavelD.n}**!\n\n<a:ruby_brilhos:1051958882752274452> Raridade: **${variavelD.r}**\n\n<a:Christmas:1056327422657699840> Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!\n\nSUA CHANCE: ${Chance}`)
+        .setDescription(`<a:ruby_anotando:1051958885256269908> Parabéns! Você pegou **${variavelD.n}**!\n\n<a:ruby_brilhos:1051958882752274452> Raridade: **${variavelD.r}**`)
+        .setFooter({ text: `Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!`})
         .setImage(variavelD.u)
         .setColor(variavelD.h)
 
@@ -169,14 +251,29 @@ module.exports = {
             let coletor_p = message.channel.createMessageComponentCollector({ filter: filtro_p, max: 1 })
 
             coletor_p.on('collect', (c) => {
+              if (GachaDB.rubycoins < variavelD.v) {
+                c.reply({ content: `Você não possui dinheiro suficiente para fazer a compra do personagem **${variavelD.n}**, faltam ${variavelD.v - GachaDB.rubycoins} RubyCoins.`})
+              } else {
+              GachaDB.rubycoins -= variavelD.v
+                GachaDB.save()
+                UserDB.save()
+                new Dex({
+                userID: message.author.id,
+                nomeDoPersonagem: variavelD.n,
+                url: variavelD.u,//thanks
+                raridade: variavelD.r,
+                timestamp: Date.now()
+                }).save()
                 c.reply({ content: `:Rubyparty: | O usuario ${c.user} comprou o personagem ${variavelD.n} por ${variavelD.v} RubyCoins! (Adicionado na RubyDex)`})
-            })
+              }
+              })
         })
       }
       else if (Chance < 0.10) {
         let embedpegou = new Discord.EmbedBuilder()
         .setTitle(`<a:roll:1049040693022163085> | Roll!`)
-        .setDescription(`<a:ruby_anotando:1056327775709048945> Parabéns! Você pegou **${variavelM.n}**!\n\n<a:ruby_brilhos:1051958882752274452> Raridade: **${variavelM.r}**\n\n<a:Christmas:1056327422657699840> Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!\n\nSUA CHANCE: ${Chance}`)
+        .setDescription(`<a:ruby_anotando:1051958885256269908> Parabéns! Você pegou **${variavelM.n}**!\n\n<a:ruby_brilhos:1051958882752274452> Raridade: **${variavelM.r}**`)
+        .setFooter({ text: `Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!`})
         .setImage(variavelM.u)
         .setColor(variavelM.h)
 
@@ -192,14 +289,29 @@ module.exports = {
             let coletor_p = message.channel.createMessageComponentCollector({ filter: filtro_p, max: 1 })
 
             coletor_p.on('collect', (c) => {
+              if (GachaDB.rubycoins < variavelM.v) {
+                c.reply({ content: `Você não possui dinheiro suficiente para fazer a compra do personagem **${variavelM.n}**, faltam ${variavelM.v - GachaDB.rubycoins} RubyCoins.`})
+              } else {
+              GachaDB.rubycoins -= variavelM.v
+                GachaDB.save()
+                UserDB.save()
+                new Dex({
+                userID: message.author.id,
+                nomeDoPersonagem: variavelM.n,
+                url: variavelM.u,//thanks
+                raridade: variavelM.r,
+                timestamp: Date.now()
+                }).save()
                 c.reply({ content: `:Rubyparty: | O usuario ${c.user} comprou o personagem ${variavelM.n} por ${variavelM.v} RubyCoins! (Adicionado na RubyDex)`})
-            })
+              }
+              })
         })
       }
       else if (Chance < 0.20) {
         let embedpegou = new Discord.EmbedBuilder()
         .setTitle(`<a:roll:1049040693022163085> | Roll!`)
-        .setDescription(`<a:ruby_anotando:1056327775709048945> Parabéns! Você pegou **${variavelLE.n}**!\n\n<a:ruby_brilhos:1051958882752274452> Raridade: **${variavelLE.r}**\n\n<a:Christmas:1056327422657699840> Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!\n\nSUA CHANCE: ${Chance}`)
+        .setDescription(`<a:ruby_anotando:1051958885256269908> Parabéns! Você pegou **${variavelLE.n}**!\n\n<a:ruby_brilhos:1051958882752274452> Raridade: **${variavelLE.r}**`)
+        .setFooter({ text: `Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!`})
         .setImage(variavelLE.u)
         .setColor(variavelLE.h)
 
@@ -215,15 +327,30 @@ module.exports = {
             let coletor_p = message.channel.createMessageComponentCollector({ filter: filtro_p, max: 1 })
 
             coletor_p.on('collect', (c) => {
+              if (GachaDB.rubycoins < variavelLE.v) {
+                c.reply({ content: `Você não possui dinheiro suficiente para fazer a compra do personagem **${variavelLE.n}**, faltam ${variavelLE.v - GachaDB.rubycoins} RubyCoins.`})
+              } else {
+              GachaDB.rubycoins -= variavelLE.v
+                GachaDB.save()
+                UserDB.save()
+                new Dex({
+                userID: message.author.id,
+                nomeDoPersonagem: variavelLE.n,
+                url: variavelLE.u,//thanks
+                raridade: variavelLE.r,
+                timestamp: Date.now()
+                }).save()
                 c.reply({ content: `:Rubyparty: | O usuario ${c.user} comprou o personagem ${variavelLE.n} por ${variavelLE.v} RubyCoins! (Adicionado na RubyDex)`})
-            })
+              }
+              })
         })
       }
 
       else if (Chance < 0.5) {
         let embedpegou = new Discord.EmbedBuilder()
         .setTitle(`<a:roll:1049040693022163085> | Roll!`)
-        .setDescription(`<a:ruby_anotando:1056327775709048945> Parabéns! Você pegou **${variavelE.n}**!\n\n<a:ruby_brilhos:1051958882752274452> Raridade: **${variavelE.r}**\n\n<a:Christmas:1056327422657699840> Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!\n\nSUA CHANCE: ${Chance}`)
+        .setDescription(`<a:ruby_anotando:1051958885256269908> Parabéns! Você pegou **${variavelE.n}**!\n\n<a:ruby_brilhos:1051958882752274452> Raridade: **${variavelE.r}**`)
+        .setFooter({ text: `Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!`})
         .setImage(variavelE.u)
         .setColor(variavelE.h)
 
@@ -240,15 +367,30 @@ module.exports = {
             let coletor_p = message.channel.createMessageComponentCollector({ filter: filtro_p, max: 1 })
 
             coletor_p.on('collect', (c) => {
+              if (GachaDB.rubycoins < variavelE.v) {
+                c.reply({ content: `Você não possui dinheiro suficiente para fazer a compra do personagem **${variavelE.n}**, faltam ${variavelE.v - GachaDB.rubycoins} RubyCoins.`})
+              } else {
+              GachaDB.rubycoins -= variavelE.v
+                GachaDB.save()
+                UserDB.save()
+                new Dex({
+                userID: message.author.id,
+                nomeDoPersonagem: variavelE.n,
+                url: variavelE.u,//thanks
+                raridade: variavelE.r,
+                timestamp: Date.now()
+                }).save()
                 c.reply({ content: `:Rubyparty: | O usuario ${c.user} comprou o personagem ${variavelE.n} por ${variavelE.v} RubyCoins! (Adicionado na RubyDex)`})
-            })
+              }
+              })
         })
       }
 
       else if (Chance < 0.8) {
         let embedpegou = new Discord.EmbedBuilder()
         .setTitle(`<a:roll:1049040693022163085> | Roll!`)
-        .setDescription(`<a:ruby_anotando:1056327775709048945> Parabéns! Você pegou **${variavelI.n}**!\n\n<a:ruby_brilhos:1051958882752274452> Raridade: **${variavelI.r}**\n\n<a:Christmas:1056327422657699840> Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!\n\nSUA CHANCE: ${Chance}`)
+        .setDescription(`<a:ruby_anotando:1051958885256269908> Parabéns! Você pegou **${variavelI.n}**!\n\n<a:ruby_brilhos:1051958882752274452> Raridade: **${variavelI.r}**`)
+        .setFooter({ text: `Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!`})
         .setImage(variavelI.u)
         .setColor(variavelI.h)
 
@@ -264,15 +406,30 @@ module.exports = {
             let coletor_p = message.channel.createMessageComponentCollector({ filter: filtro_p, max: 1 })
 
             coletor_p.on('collect', (c) => {
+              if (GachaDB.rubycoins < variavelI.v) {
+                c.reply({ content: `Você não possui dinheiro suficiente para fazer a compra do personagem **${variavelI.n}**, faltam ${variavelI.v - GachaDB.rubycoins} RubyCoins.`})
+              } else {
+              GachaDB.rubycoins -= variavelI.v
+                GachaDB.save()
+                UserDB.save()
+                new Dex({
+                userID: message.author.id,
+                nomeDoPersonagem: variavelI.n,
+                url: variavelI.u,//thanks
+                raridade: variavelI.r,
+                timestamp: Date.now()
+                }).save()
                 c.reply({ content: `:Rubyparty: | O usuario ${c.user} comprou o personagem ${variavelI.n} por ${variavelI.v} RubyCoins! (Adicionado na RubyDex)`})
-            })
+              }
+              })
         })
       }
 
       else if (Chance < 2.0) {
         let embedpegou = new Discord.EmbedBuilder()
         .setTitle(`<a:roll:1049040693022163085> | Roll!`)
-        .setDescription(`<a:ruby_anotando:1056327775709048945> Parabéns! Você pegou **${variavelC.n}**!\n\n<a :ruby_brilhos:1051958882752274452> Raridade: **${variavelC.r}**\n\n<a:Christmas:1056327422657699840> Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!\n\nSUA CHANCE: ${Chance}`)
+        .setDescription(`<a:ruby_anotando:1051958885256269908> Parabéns! Você pegou **${variavelC.n}**!\n\n<a:ruby_brilhos:1051958882752274452> Raridade: **${variavelC.r}**`)
+        .setFooter({ text: `Sabia que está tendo um evento de natal e você ganha 2x RubyCoins em todos os comandos de economia?!`})
         .setImage(variavelC.u)
         .setColor(variavelC.h)
 
@@ -288,12 +445,27 @@ module.exports = {
             let coletor_p = message.channel.createMessageComponentCollector({ filter: filtro_p, max: 1 })
 
             coletor_p.on('collect', (c) => {
+              if (GachaDB.rubycoins < variavelC.v) {
+                c.reply({ content: `Você não possui dinheiro suficiente para fazer a compra do personagem **${variavelC.n}**, faltam ${variavelC.v - GachaDB.rubycoins} RubyCoins.`})
+              } else {
+              GachaDB.rubycoins -= variavelC.v
+                GachaDB.save()
+                UserDB.save()
+                new Dex({
+                userID: message.author.id,
+                nomeDoPersonagem: variavelC.n,
+                url: variavelC.u,//thanks
+                raridade: variavelC.r,
+                timestamp: Date.now()
+                }).save()
                 c.reply({ content: `:Rubyparty: | O usuario ${c.user} comprou o personagem ${variavelC.n} por ${variavelC.v} RubyCoins! (Adicionado na RubyDex)`})
-            })
+              }
+              })
         })
       }
 
       
 
   }
+}
 }
